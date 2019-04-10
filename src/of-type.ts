@@ -1,7 +1,7 @@
 import { filter } from 'rxjs/operators'
 
 import { ActionCreator } from './create-action-creator'
-import { AnyAction } from './action'
+import { Action, AnyAction } from './action'
 import { getType } from './get-type'
 
 /**
@@ -22,9 +22,13 @@ import { getType } from './get-type'
 export function ofType<
   Source extends AnyAction,
   Key extends ActionCreator<Source> | Source | Source['type'],
-  Sink extends Source = Key extends (...args: any[]) => infer U
+  Sink extends Source = Key extends ActionCreator<infer U>
     ? (U extends Source ? U : never)
-    : (Key extends Source ? Key : never)
+    : (Key extends Source
+        ? Key
+        : (Key extends Source['type']
+            ? (Source extends Action<Key> ? Source : never)
+            : never))
 >(keys: Key | Key[]) {
   const types: string[] = (Array.isArray(keys) ? keys : [keys]).map(key =>
     typeof key === 'string' ? key : getType(key)
